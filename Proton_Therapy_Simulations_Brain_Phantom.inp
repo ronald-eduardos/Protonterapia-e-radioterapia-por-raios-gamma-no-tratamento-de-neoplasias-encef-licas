@@ -1,0 +1,235 @@
+$OMP = 4
+[ T i t l e ]
+Simulação de um tratamento radioterápico de tumor cerebral com feixe de prótons
+Redigido por Ronald Eduardo Soares
+http://lattes.cnpq.br/3292513052391106
+
+[ P a r a m e t e r s ]
+  icntl    =		0         					$ (D=0) 3:ECH 5:NOR 6:SRC 7,8:GSH 11:DSH 12:DUMP
+  itall    =        1         					$ (D=0) 0:no tally at batch, 1:same, 2:different
+  maxcas   =        1000       					$Número de partículas por "pacote"
+  maxbch   =        10000   	 				$Número de "pacotes"
+  negs     =        1     						$Usa o código EGS para cálculo do transporte de Fótons, Pósitrons e Elétrons
+  file(6)  =        phits.out           		$Arquivo geral de output
+  $istdev   =       -1         					$Modo de recálculo ativado (caso a simulação seja rodada 
+														 $outra vez a semente será obtida da última his-
+														 $tória previamente simulada.)
+
+[ S o u r c e ]
+   s-type 	=		1             $Fonte axial mono energética
+     proj 	=  		proton        $Tipo de partículas emitidas        
+      dir 	=   	1.0           $Feixe emitido na direção do eixo z (feixe tipo lápis)
+       r0 	=   	0.            $Raio do feixe
+       z0 	=      -38.5          $Posição mínima do feixe
+       z1 	=      -38.5          $Posição máxima do feixe
+       e0 	=       120.          $Energia do feixe [MeV/u]
+   totfact  =       1e6			  $Normaliza os dados obtidos para uma irradiação com um milhão de prótons
+	
+	
+[ M a t e r i a l ]
+  mat[1]    H		-0.063984	$G4_BONE_COMPACT_ICRU 1.85 g/cm³ 
+			C		-0.278000
+			N		-0.027000
+			O		-0.410016
+			Mg		-0.002000
+			P 		-0.070000
+			S 		-0.002000
+			Ca 		-0.147000
+
+  mat[2]	H 		-0.110667	$G4_BRAIN_ICRP -1.03 g/cm³
+			C 		-0.125420
+			N 		-0.013280
+			O 		-0.737723
+			Na 		-0.001840
+			Mg 		-0.000150
+			P 		-0.003540
+			S 		-0.001770
+			Cl 		-0.002360
+			K 		-0.003100
+			Ca 		-0.000090
+			Fe 		-0.000050
+			Zn 		-0.000010
+
+  mat[3]	H 		-0.119477	$G4_ADIPOSE_TISSUE_ICRP -0.92 g/cm³
+			C 		-0.637240
+			N 		-0.007970
+			O 		-0.232333
+			Na 		-0.000500
+			Mg 		-0.000020
+			P 		-0.000160
+			S 		-0.000730
+			Cl 		-0.001190
+			K 		-0.000320
+			Ca 		-0.000020
+			Fe 		-0.000020
+			Zn 		-0.000020		
+ 
+  mat[4]    C     -0.000124		$Dry Air -0.001205 g/cm³   
+  		    N     -0.755268		
+  		    O     -0.231781
+  		    Ar    -0.012827 
+
+
+[ M a t  N a m e  C o l o r ]
+  1     {Skull}   	blue
+  2     {Brain}		pastelgreen							$Atribuindo rótulos e cores aos materiais
+  3		{Tumor}	    orange
+  4		{Dry Air}	green
+
+
+[ S u r f a c e ]
+  1		so      0.5										$Delimita o tumor
+  2		so      7.8										$Delimita a superfície interior do crânio
+  3		so      8.5										$Delimita a superfície exterior do crânio
+  4		rpp    -15	15		-15		15		-50		20  $Delimita o espaço da simulação
+
+
+[ C e l l ]
+  100		3		-0.92		-1						$Tumor 		
+  101		2		-1.03		-2		1				$Cérebro
+  102		1		-1.85		-3		2				$Crânio
+  103       4		-0.001205	-4		3				$Ar ambiente
+  104	   -1					 4						$Vazio externo
+
+
+[ V o l u m e ]
+    reg        vol  
+	100		4/3*pi*0.5**3 								$Volume do tumor
+	101		4/3*pi*(7.8**3-0.5**3)						$Volume do cérebro
+	102		4/3*pi*(8.5**3-7.8**3)						$Volume do crânio
+
+
+[ T - Deposit ]off
+    title =		Dose deposited by an incident beam of 115 MeV
+     mesh =		xyz            									$Tipo de malha é malha de pontuação xyz
+   x-type =		2            									$Malha x é linear dada por xmin, xmax e nx
+     xmin =    -9      											$Valor mínimo dos pontos da malha x
+     xmax =     9     											$Valor máximo dos pontos da malha x
+       nx =     250              								$Número de pontos da malha x 
+   y-type =    	1            									$Malha y é dada pelos dados abaixo
+       ny =    	1            									$Não há divisões na direção de y
+               -9  9											$Quantificação da energia depositada na região entre -9 e 9 em y
+   z-type =     2            									$Malha z é linear dada por zmin, zmax e nz
+     zmin =    -9             									$Valor mínimo dos pontos da malha z
+     zmax =     9             									$Valor máximo dos pontos da malha z
+       nz =     250            									$Número de pontos da malha z
+     unit =     0            									$A unidade é [Gy/fonte]
+ material =     3
+				1 2 3          									$Energia depositada em todos os materiais, com excessão do ar
+   output =     dose           									$Expressar a energia total depositada
+     axis =     xz           									$Deposição ao longo do eixo z
+     file =     deposited_dose_115_MeV.out                      $Nome do arquivo de output
+     part =     proton all 										$Quantificar a energia depositada por prótons e por todas as partículas     
+    gshow =     1            									$ 0: no 1:bnd, 2:bnd+mat, 3:bnd+reg 4:bnd+lat
+   epsout =     1            									$Gerar arquivo EPS com Angel
+	
+
+[ T - Deposit ]
+    title =		Dose deposited in the longitudinal direction
+     mesh =		xyz            									$Tipo de malha é malha de pontuação xyz
+   x-type =		2            									$Malha x é linear dada por xmin, xmax e nx
+     xmin =    -9      											$Valor mínimo dos pontos da malha x
+     xmax =     9     											$Valor máximo dos pontos da malha x
+       nx =     1              									$Número de pontos da malha x (não há divisão da malha em x)
+   y-type =    	1            									$Malha y é dada pelos dados abaixo
+       ny =    	1            									$Não há divisões na direção de y
+               -9  9											$Quantificação da energia depositada na região entre -9 e 9 em y
+   z-type =     2            									$Malha z é linear dada por zmin, zmax e nz
+     zmin =    -9             									$Valor mínimo dos pontos da malha z
+     zmax =     9             									$Valor máximo dos pontos da malha z
+       nz =     250            									$Número de pontos da malha z
+     unit =     0            									$A unidade é [Gy/fonte]
+ material =     3
+				1 2 3          									$Energia depositada em todos os materiais, com excessão do ar
+   output =     dose           									$Expressar a energia total depositada
+     axis =     z           									$Deposição ao longo do eixo z
+     file =     longitudinal_direction_deposit_full.out         $Nome do arquivo de output
+     part =     proton all 										$Quantificar a energia depositada por prótons e por todas as partículas     
+    gshow =     1            									$ 0: no 1:bnd, 2:bnd+mat, 3:bnd+reg 4:bnd+lat
+   epsout =     1            									$Gerar arquivo EPS com Angel
+
+
+[ T - Deposit ]
+    title =		Dose deposited in the transverse direction
+     mesh =  	xyz            									$Tipo de malha é malha de pontuação xyz
+   x-type =    	2            									$Malha x é linear dada por xmin, xmax e nx
+     xmin =    -9      											$Valor mínimo dos pontos da malha x
+     xmax =     9      											$Valor máximo dos pontos da malha x
+       nx =     1              									$Número de pontos da malha x (não há divisão da malha em x)
+   z-type =     1            									$Malha z é dada pelos dados abaixo
+       nz =     1            									$Não há divisões na direção de z
+               -9  9											$Quantificação da energia depositada na região entre -9 e 9 em z
+   y-type =     2            									$Malha y é linear dada por ymin, ymax e ny
+     ymin =    -9             									$Valor mínimo dos pontos da malha y
+     ymax =     9             									$Valor máximo dos pontos da malha y
+       ny =     250            									$Número de pontos da malha y
+     unit =     0            									$A unidade é [Gy/fonte]
+ material =     3
+				1 2 3          									$Energia depositada em todos os materiais, com excessão do ar
+   output =     dose           									$Expressar a energia total depositada
+     axis =     y           									$Deposição ao longo do eixo y
+     file =     transverse_direction_deposit_full.out           $Nome do arquivo de output
+     part =     proton all 										$Quantificar a energia depositada por prótons e por todas as partículas     
+    gshow =     1            									$ 0: no 1:bnd, 2:bnd+mat, 3:bnd+reg 4:bnd+lat
+   epsout =     1            									$Gerar arquivo EPS com Angel
+
+
+[ T - T r a c k ]off
+     mesh =		xyz            									$Tipo de malha é malha de pontuação xyz
+   x-type =     2            									$Malha x é linear dada por xmin, xmax e nx
+       nx =     250            									$Número de pontos na malha em x
+     xmin =    -9.           									$Valor do ponto mínimo em x
+     xmax =     9.           									$Valor do ponto máximo em x
+   y-type =     1            									$Malha y é dada pelos pontos que seguem
+       ny =     1            									$Número de pontos da malha y
+               -9  9									        
+   z-type =     2            									$Malha z é linear dada por zmin, zmax e nz
+       nz =     500           									$número de pontos em z
+     zmin =    -40.           									$Valor do ponto mínimo em z
+     zmax =     15.           									$Valor do ponto máximo em z
+     part =     proton all                                      
+   e-type =     1            									$Malha de energia dada pelos dados que seguem
+       ne =     1            									$Número de intervalos em que o range de energia é dividido
+                0.0  120.0									    
+     unit =     1            									$Unidades em [1/cm^2/source]
+     axis =     xz            									$eixos
+     file = 	Geometry_xz.out  								$Nome do arquivo de saída
+    title = 	{Geometry}                                      $Título
+    gshow =     1            									$0: no 1:bnd, 2:bnd+mat, 3:bnd+reg 4:bnd+lat
+   epsout =     1            									$Gerar arquivo EPS com Angel
+				
+
+[ T - Deposit ]
+    title =  Dose deposited in each organ
+     mesh =  reg            									$Energia depositada por região
+      reg =  100		101		102
+     unit =    0            									$Unidade em [Gy/source]
+ material =  all            									$Energia depositada em todos os materiais
+   output =  dose           									$Energia depositada total
+     axis =   reg           									$Eixos de saída
+     file = deposited_dose_organs.out     						$Nome do arquivo de saída
+     part =  proton all      
+    gshow =    1            									$0: no 1:bnd, 2:bnd+mat, 3:bnd+reg 4:bnd+lat
+   epsout =    1            									$Gerar arquivo EPS com Angel
+
+
+[ T - Deposit ]
+    title =  Energy deposited per particle
+     mesh =  reg            									$Energia depositada por região
+      reg =  100		101		102
+     unit =    3            									$Unidade em [1/source] : somente para output=deposit
+ material =  all            									$Energia depositada em todos os materiais
+   e-type =    2            									$Malha é logarítmica e dada por emin, emax e ne
+    emin  =  0.0  												$Valor do ponto mínimo da malha em e
+    emax  =  112.00      										$Valor do ponto máximo da malha em e
+       ne =  112            									$Número de pontos da malha
+   output =  deposit           									$Avaliar a variância das energias de deposição por história individual
+     axis =   eng           									$Eixos de saída
+   deposit=   0													$Distribuição da energia total depositada com a contribuição de cada partícula 
+	 file = deposited_energy_organs_deposit0.out     			$Nome do arquivo de saída
+     part =  all       
+    gshow =    1            									$0: no 1:bnd, 2:bnd+mat, 3:bnd+reg 4:bnd+lat
+   epsout =    1            									$Gerar arquivo EPS com Angel
+
+[ E n d ]
+
